@@ -33,6 +33,8 @@ public class CodeGuessrViewController {
     private GameSummaryDto gameSummary;
     private int currentPos;
 
+    private  RoundTimer roundTimer;
+
     public CodeGuessrViewController(CodeGuessrView codeGuessrView, GameModeDto gameModeDto) {
         this.codeGuessrView = codeGuessrView;
         this.gameModeDto = gameModeDto;
@@ -60,8 +62,11 @@ public class CodeGuessrViewController {
         randomCode = CodeFinderUtils.getRandomCode(projects);
         initCodeToFind();
 
-        if (gameModeDto.timeLimit())
-            new RoundTimer(this).start();
+        if (gameModeDto.timeLimit()) {
+            roundTimer = new RoundTimer(this);
+            roundTimer.start();
+        }
+
     }
 
     private void initCodeToFind() {
@@ -154,6 +159,7 @@ public class CodeGuessrViewController {
     }
 
     public void guess() {
+        if(gameModeDto.timeLimit()) roundTimer.stop();
         Integer answerI = getAnswerI();
         String selectedPath = getFilePath(getSelectedPath(), false);
 
