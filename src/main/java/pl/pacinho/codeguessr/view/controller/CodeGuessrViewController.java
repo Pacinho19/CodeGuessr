@@ -1,17 +1,18 @@
 package pl.pacinho.codeguessr.view.controller;
 
 import lombok.RequiredArgsConstructor;
-import pl.pacinho.codeguessr.model.CodeDto;
+import pl.pacinho.codeguessr.model.*;
 import pl.pacinho.codeguessr.utils.CodeFinderUtils;
-import pl.pacinho.codeguessr.model.GameSummaryDto;
-import pl.pacinho.codeguessr.model.ProjectDto;
-import pl.pacinho.codeguessr.model.RoundResultDto;
 import pl.pacinho.codeguessr.utils.RsaProjectUtils;
 import pl.pacinho.codeguessr.view.CodeGuessrView;
 import pl.pacinho.codeguessr.view.RoundResultView;
+import pl.pacinho.codeguessr.view.components.tools.RoundTimer;
 
 import javax.swing.*;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 import javax.swing.tree.DefaultMutableTreeNode;
+import java.awt.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collections;
@@ -25,15 +26,23 @@ import java.util.stream.Stream;
 public class CodeGuessrViewController {
 
     private CodeGuessrView codeGuessrView;
+    private final GameModeDto gameModeDto;
     private List<ProjectDto> projects;
     private Map<String, ProjectDto> projectsMap;
     private CodeDto randomCode;
     private GameSummaryDto gameSummary;
+    private int currentPos;
 
-    public CodeGuessrViewController(CodeGuessrView codeGuessrView) {
+    public CodeGuessrViewController(CodeGuessrView codeGuessrView, GameModeDto gameModeDto) {
         this.codeGuessrView = codeGuessrView;
+        this.gameModeDto = gameModeDto;
         initProjects();
         initGameSummary();
+        gameMode();
+    }
+
+    private void gameMode() {
+        codeGuessrView.enableMoveButtons(gameModeDto.canMove());
     }
 
     private void initProjects() {
@@ -44,11 +53,65 @@ public class CodeGuessrViewController {
 
     private void initGameSummary() {
         gameSummary = new GameSummaryDto();
+        codeGuessrView.getGameSummaryPanel().startTime();
     }
 
     public void initRandomCode() {
         randomCode = CodeFinderUtils.getRandomCode(projects);
-        codeGuessrView.getLineToFindTA().setText(randomCode.text());
+        initCodeToFind();
+
+        if (gameModeDto.timeLimit())
+            new RoundTimer(this).start();
+    }
+
+    private void initCodeToFind() {
+        currentPos = randomCode.lineIndex() + 1;
+        codeToFind();
+    }
+
+    public void up() {
+        if (currentPos - 1 == 1) return;
+        currentPos--;
+        codeToFind();
+    }
+
+    public void down() {
+        if (currentPos + 1 == randomCode.fullCode().size()) return;
+        currentPos++;
+        codeToFind();
+    }
+
+    public void startPosition() {
+        initCodeToFind();
+    }
+
+    private void codeToFind() {
+        String text = getCodeLine(currentPos - 1) + "\n"
+                      + getCodeLine(currentPos) + "\n"
+                      + getCodeLine(currentPos + 1);
+        codeGuessrView.getLineToFindTA().setText(text);
+        setLineToFindTextColor(text);
+    }
+
+    private String getCodeLine(int i) {
+        if (i < 0) return "";
+        if (i > randomCode.fullCode().size() - 1) return "";
+        return randomCode.fullCode().get(i - 1);
+    }
+
+    private void setLineToFindTextColor(String text) {
+        String line = randomCode.fullCode().get(randomCode.lineIndex());
+        try {
+            Highlighter highlighter = codeGuessrView.getLineToFindTA().getHighlighter();
+            Highlighter.HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.pink);
+            int p0 = text.toLowerCase().indexOf(line.toLowerCase());
+            int p1 = p0 + line.length();
+            if (p0 > -1) {
+                highlighter.addHighlight(p0, p1, painter);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     public String getCodeOfClass() {
@@ -88,16 +151,17 @@ public class CodeGuessrViewController {
 
     public void guess() {
         Integer answerI = getAnswerI();
-        if (answerI == -1) {
-            JOptionPane.showMessageDialog(codeGuessrView, "Invalid line number. Only integers.");
-            return;
-        }
-
         String selectedPath = getFilePath(getSelectedPath(), false);
-        if (!selectedPath.contains(".")) {
-            JOptionPane.showMessageDialog(codeGuessrView, "Invalid path. Please select .java file, not directory.");
-            return;
-        }
+
+//        if (answerI == -1) {
+//            JOptionPane.showMessageDialog(codeGuessrView, "Invalid lineIndex number. Only integers.");
+//            return;
+//        }
+//
+//        if (!selectedPath.contains(".")) {
+//            JOptionPane.showMessageDialog(codeGuessrView, "Invalid path. Please select .java file, not directory.");
+//            return;
+//        }
 
         checkAnswer(selectedPath, answerI);
     }
@@ -117,13 +181,13 @@ public class CodeGuessrViewController {
         }
 
         BigDecimal projectPoints = BigDecimal.valueOf(4_000 * ((double) correct / (double) partsOfCorrectPath.length)).setScale(0, RoundingMode.CEILING);
-        double correctPercent = ((double) Math.abs(randomCode.line() - answerI) / (double) randomCode.countOfLines()) * 100L;
+        double correctPercent = ((double) Math.abs(randomCode.lineIndex() + 1 - answerI) / (double) randomCode.fullCode().size()) * 100L;
 
         BigDecimal linePoints = !projectPoints.equals(BigDecimal.valueOf(4_000)) ? BigDecimal.ZERO : BigDecimal.valueOf(1_000L * ((100 - correctPercent) / 100));
         BigDecimal result = projectPoints.add(linePoints).setScale(0, RoundingMode.HALF_UP);
         gameSummary.addPoints(result);
 
-        result(result, partsOfCorrectPath, partsOfSelectedPath, randomCode.line(), answerI);
+        result(result, partsOfCorrectPath, partsOfSelectedPath, randomCode.lineIndex() + 1, answerI);
     }
 
     private void result(BigDecimal result, String[] partsOfCorrectPath, String[] partsOfSelectedPath, Integer correctLineNumber, Integer selectedLineNumber) {
@@ -149,6 +213,7 @@ public class CodeGuessrViewController {
     private void finishGame() {
         gameSummary.finishGame();
         setPointsAndRound();
+        codeGuessrView.getGameSummaryPanel().stopTime();
 
         if (endGameOptionPane() == JOptionPane.YES_OPTION) newGame();
         else System.exit(0);

@@ -1,11 +1,11 @@
 package pl.pacinho.codeguessr;
 
-import pl.pacinho.codeguessr.view.CodeGuessrView;
+import pl.pacinho.codeguessr.view.GameModeView;
 
 public class CodeGuessr {
 
     public static void main(String[] args) {
-        new CodeGuessrView()
+        new GameModeView()
                 .setVisible(true);
     }
 }

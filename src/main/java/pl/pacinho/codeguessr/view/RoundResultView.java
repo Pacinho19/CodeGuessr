@@ -65,13 +65,12 @@ public class RoundResultView extends JDialog {
         correctValuesPanel.setBorder(new TitledBorder("Correct"));
         SpringUtilities.makeCompactGrid(correctValuesPanel, 2, 2, 5, 5, 5, 5);
 
-
         JPanel answerValuesPanel = new JPanel(new SpringLayout());
         answerValuesPanel.add(selectedPathJL);
         answerValuesPanel.add(selectedPathValueJL);
         answerValuesPanel.add(selectedLineJL);
         answerValuesPanel.add(selectedLineValueJL);
-        answerValuesPanel.setBorder(new TitledBorder("Correct"));
+        answerValuesPanel.setBorder(new TitledBorder("Answer"));
         SpringUtilities.makeCompactGrid(answerValuesPanel, 2, 2, 5, 5, 5, 5);
 
         resultPanel.add(correctValuesPanel, BorderLayout.NORTH);

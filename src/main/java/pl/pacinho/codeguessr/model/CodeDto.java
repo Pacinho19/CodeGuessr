@@ -1,6 +1,8 @@
 package pl.pacinho.codeguessr.model;
 
-public record CodeDto(String projectName, String filePath,  String text, int line, int countOfLines) {
+import java.util.List;
+
+public record CodeDto(String projectName, String filePath, int lineIndex, List<String> fullCode) {
 
     public String getPath(){
         return projectName + "/" + filePath;

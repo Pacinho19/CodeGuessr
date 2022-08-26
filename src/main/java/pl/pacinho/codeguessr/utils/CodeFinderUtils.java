@@ -28,6 +28,6 @@ public class CodeFinderUtils {
 
         String text = lines.get(RandomUtils.getInt(0, lines.size() - 1));
 
-        return new CodeDto(projectDto.getName(), filePath, text, allLines.indexOf(text) + 1, allLines.size());
+        return new CodeDto(projectDto.getName(), filePath, allLines.indexOf(text), allLines);
     }
 }

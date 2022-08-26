@@ -1,5 +1,6 @@
 package pl.pacinho.codeguessr.view;
 
+import pl.pacinho.codeguessr.model.GameModeDto;
 import pl.pacinho.codeguessr.model.NodeDto;
 import pl.pacinho.codeguessr.utils.SpringUtilities;
 import pl.pacinho.codeguessr.view.controller.CodeGuessrViewController;
@@ -17,30 +18,32 @@ public class CodeGuessrView extends JFrame {
 
     private CodeGuessrViewController codeGuessrViewController;
 
-    public CodeGuessrView() {
+    public CodeGuessrView(GameModeDto gameModeDto) {
         this.setTitle("Repository View");
-        this.setSize(900, 700);
+        this.setSize(1100, 700);
         this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        codeGuessrViewController = new CodeGuessrViewController(this);
 
         initComponents();
         initView();
         initActions();
+        codeGuessrViewController = new CodeGuessrViewController(this, gameModeDto);
         codeGuessrViewController.initRandomCode();
+        createProjectsTree();
     }
 
 
     private void initComponents() {
         parentNode = new DefaultMutableTreeNode("RSA Projects");
         repositoryTree = new JTree(parentNode);
-        repositoryTree.setMinimumSize(new Dimension(250, this.getHeight()));
-        repositoryTree.setPreferredSize(new Dimension(250, 9999));
-        createProjectsTree();
 
         lineToFindTA = new JTextArea(2, 50);
         lineToFindTA.setEditable(false);
+
+        upJB = new JButton("UP");
+        downJB = new JButton("DOWN");
+        startPosJB = new JButton("START");
 
         codeTA = new JTextArea(2, 50);
         codeTA.setEditable(false);
@@ -54,20 +57,39 @@ public class CodeGuessrView extends JFrame {
         gameSummaryPanel = new GameSummaryPanel();
         gameSummaryPanel.setMinimumSize(new Dimension(100, this.getHeight()));
         gameSummaryPanel.setPreferredSize(new Dimension(100, this.getHeight()));
+
+        roundTimer = new JProgressBar();
+        roundTimer.setStringPainted(true);
+        roundTimer.setString("Unlimited time");
     }
 
     private void initView() {
         Container main = this.getContentPane();
         main.setLayout(new BorderLayout());
 
-        JScrollPane jScrollPane = new JScrollPane(repositoryTree, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        main.add(roundTimer, BorderLayout.NORTH);
+
+        JScrollPane jScrollPane = new JScrollPane(repositoryTree, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+        jScrollPane.setMinimumSize(new Dimension(300, this.getHeight()));
+        jScrollPane.setPreferredSize(new Dimension(300, 9999));
         main.add(jScrollPane, BorderLayout.WEST);
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         codeTA.setBorder(new TitledBorder("Code of class"));
 
-        JPanel lineToFindPanel = new JPanel(new BorderLayout());
-        lineToFindPanel.add(lineToFindTA, BorderLayout.NORTH);
+        JPanel guessPanel = new JPanel(new BorderLayout());
+        guessPanel.add(new JScrollPane(lineToFindTA), BorderLayout.NORTH);
+
+        JPanel linePanel = new JPanel(new BorderLayout());
+        linePanel.add(new JScrollPane(lineToFindTA), BorderLayout.CENTER);
+        guessPanel.add(linePanel, BorderLayout.NORTH);
+
+        JPanel navigationPanel = new JPanel(new SpringLayout());
+        navigationPanel.add(upJB);
+        navigationPanel.add(downJB);
+        navigationPanel.add(startPosJB);
+        SpringUtilities.makeCompactGrid(navigationPanel, 3, 1, 5, 5, 5, 5);
+        linePanel.add(navigationPanel, BorderLayout.EAST);
 
         JPanel answerPanel = new JPanel(new BorderLayout());
 
@@ -78,9 +100,9 @@ public class CodeGuessrView extends JFrame {
 
         answerPanel.add(answerLinePanel, BorderLayout.WEST);
         answerPanel.add(guessJB, BorderLayout.CENTER);
-        lineToFindPanel.add(answerPanel, BorderLayout.SOUTH);
+        guessPanel.add(answerPanel, BorderLayout.SOUTH);
 
-        centerPanel.add(lineToFindPanel, BorderLayout.NORTH);
+        centerPanel.add(guessPanel, BorderLayout.NORTH);
         centerPanel.add(new JScrollPane(codeTA), BorderLayout.CENTER);
         lineToFindTA.setBorder(new TitledBorder("Code to find"));
         main.add(centerPanel, BorderLayout.CENTER);
@@ -102,6 +124,10 @@ public class CodeGuessrView extends JFrame {
                 }
             }
         });
+
+        upJB.addActionListener(e -> codeGuessrViewController.up());
+        downJB.addActionListener(e -> codeGuessrViewController.down());
+        startPosJB.addActionListener(e -> codeGuessrViewController.startPosition());
     }
 
     private void createProjectsTree() {
@@ -134,6 +160,16 @@ public class CodeGuessrView extends JFrame {
         return lineToFindTA;
     }
 
+    public JProgressBar getRoundTimer() {
+        return roundTimer;
+    }
+
+    public void enableMoveButtons(boolean enable) {
+        upJB.setEnabled(enable);
+        downJB.setEnabled(enable);
+        startPosJB.setEnabled(enable);
+    }
+
     public GameSummaryPanel getGameSummaryPanel() {
         return gameSummaryPanel;
     }
@@ -147,10 +183,14 @@ public class CodeGuessrView extends JFrame {
     private JTree repositoryTree;
     private DefaultMutableTreeNode parentNode;
     private JTextArea lineToFindTA;
+    private JButton upJB;
+    private JButton downJB;
+    private JButton startPosJB;
     private JTextArea codeTA;
     private JLabel answerL;
     private JFormattedTextField answerTF;
     private JButton guessJB;
     private GameSummaryPanel gameSummaryPanel;
+    private JProgressBar roundTimer;
 
 }
