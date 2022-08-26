@@ -96,7 +96,10 @@ public class CodeGuessrViewController {
     private String getCodeLine(int i) {
         if (i < 0) return "";
         if (i > randomCode.fullCode().size() - 1) return "";
-        return randomCode.fullCode().get(i - 1);
+        String text = randomCode.fullCode().get(i - 1);
+        if (i == randomCode.lineIndex() + 1) return text;
+        if (!text.startsWith("package ")) return text;
+        return "package [...]";
     }
 
     private void setLineToFindTextColor(String text) {
@@ -131,6 +134,7 @@ public class CodeGuessrViewController {
                 codeGuessrView.getRepositoryTree().getLastSelectedPathComponent();
 
         if (node == null) return Collections.emptyList();
+        if (codeGuessrView.getRepositoryTree().getSelectionPath() == null) return Collections.emptyList();
 
         return Stream.of(codeGuessrView.getRepositoryTree().getSelectionPath()
                         .toString()
